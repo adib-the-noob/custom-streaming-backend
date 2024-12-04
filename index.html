@@ -5,103 +5,94 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Live Video Stream</title>
     <meta name="referrer" content="strict-origin-when-cross-origin">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
     <script src="https://cdn.jsdelivr.net/npm/hls.js@latest"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- <style>
-        /* Custom video player controls */
-        video::-webkit-media-controls-panel {
-            background-image: linear-gradient(transparent, rgba(0, 0, 0, 0.7));
-        }
-        
-        video::-webkit-media-controls-play-button,
-        video::-webkit-media-controls-volume-slider-container,
-        video::-webkit-media-controls-mute-button,
-        video::-webkit-media-controls-timeline,
-        video::-webkit-media-controls-current-time-display,
-        video::-webkit-media-controls-time-remaining-display,
-        video::-webkit-media-controls-fullscreen-button {
-            opacity: 0.9;
-        }
-
-        video::-webkit-media-controls-timeline {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            margin: 0 10px;
-        }
-
-        video::-webkit-media-controls-volume-slider {
-            background-color: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            padding: 0 5px;
-        }
-    </style> -->
 </head>
 <body>
-<div>
-    <h1 class="text-center font-bold p-4 text-2xl">
-        streaming from Adib's custom Backend server running on AWS!
-    </h1>
-</div>
-<div class="bg-stone-300 min-h-[80vh] flex flex-col items-center justify-center">
-    <!-- Add URL input form -->
-    <div class=" w-full max-w-4xl mx-auto">
-        <div class="flex gap-2 p-2">
-            <input 
-                type="text" 
-                id="m3u8Input" 
-                placeholder="Enter M3U8 URL (e.g., http://example.com/stream.m3u8)"
-                class="flex-1 px-4 py-2 rounded-lg border border-gray-300"
-                value="http://3.110.190.19/hls/adib-01.m3u8"
-            >
-            <button 
-                onclick="loadVideo()"
-                class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
-            >
-                Load live Video
-            </button>
-        </div>
+    <div>
+        <h1 class="text-center font-bold p-4 text-2xl">
+            Streaming from Adib's custom Backend server running on AWS!
+        </h1>
     </div>
-
-    <div class="container mx-auto p-2">
-        <!-- Video Player -->
-        <div class="max-w-4xl mx-auto rounded-lg overflow-hidden shadow-2xl">
-            <video 
-                id="videoPlayer" 
-                class="w-full aspect-video bg-black"
-                controls
-                controlsList="nodownload"
-            >
-                Your browser does not support the video tag.
-            </video>
+    <div class="bg-stone-300 min-h-[80vh] flex flex-col items-center justify-center">
+        <!-- Add URL input form -->
+        <div class="w-full max-w-4xl mx-auto">
+            <div class="flex gap-2 p-2">
+                <input 
+                    type="text" 
+                    id="m3u8Input" 
+                    placeholder="Enter M3U8 URL (e.g., https://d374zz8e4jhcib.cloudfront.net/live-sessions/{stream-key}.m3u8)"
+                    class="flex-1 px-4 py-2 rounded-lg border border-gray-300"
+                    value="https://d374zz8e4jhcib.cloudfront.net/live-sessions/{stream-key}.m3u8"
+                >
+                <button 
+                    onclick="loadVideo()"
+                    class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+                >
+                    Load live Video
+                </button>
+            </div>
         </div>
-    </div>
 
-    <script>
-        var video = document.getElementById('videoPlayer');
-        var hls = null;
+        <div class="container mx-auto p-2">
+            <!-- Video Player -->
+            <div class="max-w-4xl mx-auto rounded-lg overflow-hidden shadow-2xl">
+                <video 
+                    id="videoPlayer" 
+                    class="w-full aspect-video bg-black"
+                    controls
+                    controlsList="nodownload"
+                >
+                    Your browser does not support the video tag.
+                </video>
+            </div>
+        </div>
 
-        function loadVideo() {
-            var videoSrc = document.getElementById('m3u8Input').value;
-            
-            if (hls) {
-                hls.destroy();
+        <script>
+            var video = document.getElementById('videoPlayer');
+            var hls = null;
+
+            function loadVideo() {
+                var videoSrc = document.getElementById('m3u8Input').value;
+                var loadButton = document.querySelector('button');
+                loadButton.disabled = true;  // Disable button during video loading
+
+                if (hls) {
+                    hls.destroy();
+                }
+
+                if (Hls.isSupported()) {
+                    hls = new Hls({
+                        maxBufferLength: 30,
+                        maxBufferSize: 60*1000*1000,
+                        maxMaxBufferLength: 600,
+                        liveSyncDurationCount: 3,
+                        liveMaxLatencyDurationCount: 10,
+                        enableWorker: true,
+                        startLevel: -1
+                    });
+
+                    hls.loadSource(videoSrc);
+                    hls.attachMedia(video);
+                    hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                        video.play();
+                        loadButton.disabled = false;  // Re-enable button after the video is loaded
+                    });
+
+                    hls.on(Hls.Events.ERROR, function(event, data) {
+                        console.error('Error occurred: ', data);
+                        alert('There was an issue loading the stream. Please try again later.');
+                        loadButton.disabled = false;  // Re-enable button on error
+                    });
+                } else {
+                    video.src = videoSrc;
+                }
             }
 
-            if (Hls.isSupported()) {
-                hls = new Hls();
-                hls.loadSource(videoSrc);
-                hls.attachMedia(video);
-                hls.on(Hls.Events.MANIFEST_PARSED, function() {
-                    video.play();
-                });
-            } else {
-                video.src = videoSrc;
-            }
-        }
-
-        // Load default video on page load
-        loadVideo();
-    </script>
-</div>
+            // Load default video on page load
+            loadVideo();
+        </script>
+    </div>
 </body>
 </html>
