@@ -42,7 +42,26 @@
         streaming from Adib's custom Backend server running on AWS!
     </h1>
 </div>
-<div class="bg-stone-200 min-h-[80vh] flex items-center justify-center">
+<div class="bg-stone-200 min-h-[80vh] flex flex-col items-center justify-center">
+    <!-- Add URL input form -->
+    <div class=" w-full max-w-4xl mx-auto">
+        <div class="flex gap-2 p-2">
+            <input 
+                type="text" 
+                id="m3u8Input" 
+                placeholder="Enter M3U8 URL (e.g., http://example.com/stream.m3u8)"
+                class="flex-1 px-4 py-2 rounded-lg border border-gray-300"
+                value="http://3.110.190.19/hls/adib-01.m3u8"
+            >
+            <button 
+                onclick="loadVideo()"
+                class="bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600"
+            >
+                Load live Video
+            </button>
+        </div>
+    </div>
+
     <div class="container mx-auto p-2">
         <!-- Video Player -->
         <div class="max-w-4xl mx-auto rounded-lg overflow-hidden shadow-2xl">
@@ -52,7 +71,6 @@
                 controls
                 controlsList="nodownload"
             >
-                <source src="http://3.110.190.19/hls/adib-01.m3u8" type="application/x-mpegURL">
                 Your browser does not support the video tag.
             </video>
         </div>
@@ -60,15 +78,29 @@
 
     <script>
         var video = document.getElementById('videoPlayer');
-        var videoSrc = 'http://3.110.190.19/hls/adib-01.m3u8';
+        var hls = null;
 
-        if (Hls.isSupported()) {
-            var hls = new Hls();
-            hls.loadSource(videoSrc);
-            hls.attachMedia(video);
-        } else {
-            video.src = videoSrc;
+        function loadVideo() {
+            var videoSrc = document.getElementById('m3u8Input').value;
+            
+            if (hls) {
+                hls.destroy();
+            }
+
+            if (Hls.isSupported()) {
+                hls = new Hls();
+                hls.loadSource(videoSrc);
+                hls.attachMedia(video);
+                hls.on(Hls.Events.MANIFEST_PARSED, function() {
+                    video.play();
+                });
+            } else {
+                video.src = videoSrc;
+            }
         }
+
+        // Load default video on page load
+        loadVideo();
     </script>
 </div>
 </body>
